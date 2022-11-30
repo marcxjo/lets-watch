@@ -1,0 +1,55 @@
+#!/bin/bash
+
+#
+# lets-watch - a fun little script to enable queueing up media for mpv
+#
+
+usage() {
+  # TODO - add a proper heredoc
+  echo "${0##*/} - a simple script to enqueue media to mpv(-based players)"
+  echo
+  echo "usage:"
+  echo "${0##*/} [c CONFIG_FILE] [-d SCRIPT_DIR] [-l] [-p PLAYER] [-h]"
+}
+
+while getopts :c:d:lp:h o; do
+  case "$o" in
+    c)
+      CONFIG_FILE=${OPTARG}
+      ;;
+    d)
+      SCRIPT_DIR=${OPTARG}
+      ;;
+    l)
+      PLAYLIST_MODE="1"
+      ;;
+    p)
+      PLAYER=${OPTARG}
+      ;;
+    h)
+      usage
+      exit 0
+      ;;
+  esac
+done
+
+shift ${OPTIND}
+
+CONFIG_FILE=${CONFIG_FILE:-${HOME}/.config/lets-watch/default}
+
+if [[ -f $CONFIG_FILE ]]
+then
+  . $CONFIG_FILE
+fi
+
+if [[ "${PLAYLIST_MODE+x}" == "x" ]]
+then
+  SEARCH_DIR=${SCRIPT_DIR:-${PLAYLIST_DIR}}
+  LIB=${LIB_DIR}/"queue-pl"
+else
+  SEARCH_DIR=${SCRIPT_DIR:-${MEDIA_DIR}}
+  LIB=${LIB_DIR}/"queue-media"
+fi
+
+exec env SEARCH_DIR=${SEARCH_DIR} PLAYER=${PLAYER} ${LIB}
+

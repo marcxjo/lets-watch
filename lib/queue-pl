@@ -1,0 +1,64 @@
+#!/bin/bash
+
+#
+# queue-pl - add a whole or partial playlist to your mpv queue
+#
+
+gen_random_tag() {
+  # Append a random tag to playlist names so that we don't overwrite a previously enqueued list
+  LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 6
+}
+
+if [[ -z ${SEARCH_DIR} ]]
+then
+  echo "Playlist directory not set!"
+  exit 1
+fi
+
+if [[ -z ${PLAYER} ]]
+then
+  echo "Media player not set!"
+  exit 1
+fi
+
+PLAYLIST_FILE=$(ls ${SEARCH_DIR} | fzf --preview="cat ${SEARCH_DIR}/{} | sed 's|^.*\/||'")
+
+if [[ -z ${PLAYLIST_FILE} ]]
+then
+  echo "No playlist selected!"
+  exit 1
+fi
+
+PLAYLIST_START_ENTRY=$(cat ${SEARCH_DIR}/${PLAYLIST_FILE} | nl -n 'ln' | fzf -d '/' --with-nth=-1)
+
+PLAYLIST_START_NUM="${PLAYLIST_START_ENTRY%% *}"
+PLAYLIST_START="${PLAYLIST_START_ENTRY#* }"
+
+if [[ -z ${PLAYLIST_START_NUM:-''} ]]
+then
+  echo "No playlist entry selected for playback start!"
+  exit 1
+fi
+
+if [[ ${PLAYLIST_START_NUM} -eq 1 ]]
+then
+  FINAL_PLAYLIST=${SEARCH_DIR}/${PLAYLIST_FILE}
+else
+  # umpv is fussy about input
+  # Rather than grapple with populating an array from the file,
+  # we'll collect the entries from the start point on and load them
+  # into a playlist in temp memory
+
+  # TODO - /tmp isn't a tmpfs for everyone - we need a more clever
+  # heuristic to set this
+  TMP_DIR=/tmp/${USER}/lets-watch
+  TMP_PLAYLIST=${TMP_DIR}/playlist-$(gen_random_tag).m3u
+
+  mkdir -p ${TMP_DIR}
+  tail -n+${PLAYLIST_START_NUM} ${SEARCH_DIR}/${PLAYLIST_FILE} > ${TMP_PLAYLIST}
+
+  FINAL_PLAYLIST=${TMP_PLAYLIST}
+fi
+
+echo $FINAL_PLAYLIST
+${PLAYER} ${FINAL_PLAYLIST} &

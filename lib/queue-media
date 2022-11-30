@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#
+# queue-media - add individual media files to your mpv queue
+#
+
+if [[ -z ${SEARCH_DIR} ]]
+then
+  echo "Playlist directory not set!"
+  exit 1
+fi
+
+if [[ -z ${PLAYER} ]]
+then
+  echo "Media player not set!"
+  exit 1
+fi
+
+IFS=$'\n' MEDIA=("$(find ${SEARCH_DIR} -type f | fzf -m -d '/' --with-nth=-1)")
+
+if [[ -z ${MEDIA:-''} ]]
+then
+  echo "No media selected!"
+  exit 1
+fi
+
+${PLAYER} ${MEDIA} &
