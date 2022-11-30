@@ -1,0 +1,4 @@
+LIB_DIR=${HOME}/.local/lib/lets-watch
+MEDIA_DIR=${HOME}/Videos
+PLAYLIST_DIR=${HOME}/Playlists
+PLAYER="umpv"
