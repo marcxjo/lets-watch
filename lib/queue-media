@@ -18,10 +18,10 @@ fi
 
 IFS=$'\n' MEDIA=("$(find ${SEARCH_DIR} -type f | fzf -m -d '/' --with-nth=-1)")
 
-if [[ -z ${MEDIA:-''} ]]
+if [[ ${#MEDIA} -eq 0 ]]
 then
   echo "No media selected!"
   exit 1
 fi
 
-${PLAYER} ${MEDIA} &
+${PLAYER} ${MEDIA[@]} &
