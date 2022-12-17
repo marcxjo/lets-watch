@@ -89,15 +89,15 @@ try_source $CONFIG_FILE
 if [[ "${PLAYLIST_MODE+x}" == "x" ]]
 then
   SEARCH_DIR=${SCRIPT_DIR:-${PLAYLIST_DIR}}
-  QUEUE_BUILDER="${LIB_DIR}/queue-pl"
+  QUEUE_PLUGIN="${LIB_DIR}/queue-pl"
 else
   SEARCH_DIR=${SCRIPT_DIR:-${MEDIA_DIR}}
-  QUEUE_BUILDER="${LIB_DIR}/queue-media"
+  QUEUE_PLUGIN="${LIB_DIR}/queue-media"
 fi
 
 # If successful, the name of the compiled playlist
 # Otherwise an error message
-QUEUE_MSG=$(env SEARCH_DIR=${SEARCH_DIR} ${QUEUE_BUILDER})
+QUEUE_MSG=$(env SEARCH_DIR=${SEARCH_DIR} ${QUEUE_PLUGIN})
 
 if [[ $? -ne 0 ]]
 then
