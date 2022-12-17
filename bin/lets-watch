@@ -97,7 +97,7 @@ fi
 
 # If successful, the name of the compiled playlist
 # Otherwise an error message
-QUEUE_MSG=$(env SEARCH_DIR=${SEARCH_DIR} ${QUEUE_PLUGIN})
+QUEUE_MSG=$(env SEARCH_DIR=${SEARCH_DIR} TMP_DIR=${TMP_DIR} ${QUEUE_PLUGIN})
 
 if [[ $? -ne 0 ]]
 then

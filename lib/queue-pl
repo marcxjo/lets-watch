@@ -41,7 +41,9 @@ else
 
   # TODO - /tmp isn't a tmpfs for everyone - we need a more clever
   # heuristic to set this
-  TMP_DIR=/tmp/${USER}/lets-watch
+  TMP_DIR=${TMP_DIR:-/tmp/${USER}/lets-watch}
+  mkdir -p ${TMP_DIR}
+
   TMP_PLAYLIST=${TMP_DIR}/playlist-$(gen_random_tag).m3u
 
   mkdir -p ${TMP_DIR}

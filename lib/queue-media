@@ -19,7 +19,9 @@ then
   exit 1
 fi
 
-TMP_DIR=/tmp/${USER}/lets-watch
+TMP_DIR=${TMP_DIR:-/tmp/${USER}/lets-watch}
+mkdir -p ${TMP_DIR}
+
 TMP_PLAYLIST=${TMP_DIR}/playlist-$(gen_random_tag).m3u
 
 printf "%s\n" ${MEDIA} > ${TMP_PLAYLIST}
