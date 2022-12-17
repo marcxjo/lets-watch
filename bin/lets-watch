@@ -1,15 +1,62 @@
 #!/bin/bash
 
-#
-# lets-watch - a fun little script to enable queueing up media for mpv
-#
-
 usage() {
-  # TODO - add a proper heredoc
-  echo "${0##*/} - a simple script to enqueue media to mpv(-based players)"
-  echo
-  echo "usage:"
-  echo "${0##*/} [c CONFIG_FILE] [-d SCRIPT_DIR] [-l] [-p PLAYER] [-h]"
+  cat <<EOF
+  ${0##*/} - a simple script to enqueue
+
+  Usage:
+    ${0##*/} [-c CONFIG_FILE] [-d SCRIPT_DIR] [-l] [-p PLAYER] [-h]
+
+  Options:
+
+  -c CONFIG_FILE
+    Enables specifying an alternate config file.
+    Defaults to ${HOME}/.config/lets-watch/default.
+
+  -d SCRIPT_DIR
+    Enables specifying an alternate directory to be searched during the
+    execution of the invoked finder script.
+    Overrides MEDIA_DIR if running in media file mode and PLAYLIST_DIR if
+    running in playlist mode.
+
+  -l
+    Runs the script in playlist mode. In this mode, the user selects a playlist
+    from PLAYLIST_DIR, then subsequently selects the starting file for playback.
+    I.e., if the user selects the third video in a playlist, then all entries in
+    that playlist from the third onward, will be added to the current player's
+    media queue.
+
+  -p PLAYER
+    Enables specifying the media player command. This command must:
+    * be able to accept a space-separated list of files (potentially consisting
+      of both media files and playlists) as its final argument string
+    * must not require any additional a
+
+    PLAYER can be a multi-word string (in order to support e.g. setting
+    environment variables and command line options inline), but it must adhere
+    to the above specification.
+
+    Defaults to `mpv`.
+
+  -h
+    Displays this help message.
+
+  Environment Variables:
+
+  LETS_WATCH_MEDIA_PLAYER
+    Enables setting the default media player via environment variable rather
+    than by command-line option.
+
+EOF
+}
+
+try_source() {
+  local _file=${1}
+
+  if [[ -f ${_file} ]]
+  then
+    . ${_file}
+  fi
 }
 
 while getopts :c:d:lp:h o; do
@@ -37,10 +84,7 @@ shift ${OPTIND}
 
 CONFIG_FILE=${CONFIG_FILE:-${HOME}/.config/lets-watch/default}
 
-if [[ -f $CONFIG_FILE ]]
-then
-  . $CONFIG_FILE
-fi
+try_source $CONFIG_FILE
 
 if [[ "${PLAYLIST_MODE+x}" == "x" ]]
 then
