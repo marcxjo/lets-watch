@@ -11,7 +11,7 @@ usage() {
 
   -c CONFIG_FILE
     Enables specifying an alternate config file.
-    Defaults to ${HOME}/.config/lets-watch/default.
+    Defaults to \${HOME}/.config/lets-watch/default.
 
   -d SCRIPT_DIR
     Enables specifying an alternate directory to be searched during the
@@ -36,7 +36,7 @@ usage() {
     environment variables and command line options inline), but it must adhere
     to the above specification.
 
-    Defaults to `mpv`.
+    Defaults to mpv.
 
   -h
     Displays this help message.
