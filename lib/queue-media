@@ -1,27 +1,28 @@
 #!/bin/bash
 
-#
-# queue-media - add individual media files to your mpv queue
-#
+gen_random_tag() {
+  # Append a random tag to playlist names so that we don't overwrite a previously enqueued list
+  LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 6
+}
 
 if [[ -z ${SEARCH_DIR} ]]
 then
-  echo "Playlist directory not set!"
-  exit 1
-fi
-
-if [[ -z ${PLAYER} ]]
-then
-  echo "Media player not set!"
+  echo "Media directory not set!"
   exit 1
 fi
 
 IFS=$'\n' MEDIA=("$(find ${SEARCH_DIR} -type f | fzf -m -d '/' --with-nth=-1)")
 
-if [[ ${#MEDIA} -eq 0 ]]
+if [[ "${MEDIA:-x}" == "x" ]]
 then
   echo "No media selected!"
   exit 1
 fi
 
-${PLAYER} ${MEDIA[@]} &
+TMP_DIR=/tmp/${USER}/lets-watch
+TMP_PLAYLIST=${TMP_DIR}/playlist-$(gen_random_tag).m3u
+
+printf "%s\n" ${MEDIA} > ${TMP_PLAYLIST}
+
+echo ${TMP_PLAYLIST}
+

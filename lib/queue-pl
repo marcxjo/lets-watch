@@ -1,9 +1,5 @@
 #!/bin/bash
 
-#
-# queue-pl - add a whole or partial playlist to your mpv queue
-#
-
 gen_random_tag() {
   # Append a random tag to playlist names so that we don't overwrite a previously enqueued list
   LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 6
@@ -12,12 +8,6 @@ gen_random_tag() {
 if [[ -z ${SEARCH_DIR} ]]
 then
   echo "Playlist directory not set!"
-  exit 1
-fi
-
-if [[ -z ${PLAYER} ]]
-then
-  echo "Media player not set!"
   exit 1
 fi
 
@@ -60,4 +50,5 @@ else
   FINAL_PLAYLIST=${TMP_PLAYLIST}
 fi
 
-${PLAYER} ${FINAL_PLAYLIST} &
+echo ${FINAL_PLAYLIST}
+

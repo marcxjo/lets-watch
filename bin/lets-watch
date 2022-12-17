@@ -45,11 +45,21 @@ fi
 if [[ "${PLAYLIST_MODE+x}" == "x" ]]
 then
   SEARCH_DIR=${SCRIPT_DIR:-${PLAYLIST_DIR}}
-  LIB=${LIB_DIR}/"queue-pl"
+  QUEUE_BUILDER="${LIB_DIR}/queue-pl"
 else
   SEARCH_DIR=${SCRIPT_DIR:-${MEDIA_DIR}}
-  LIB=${LIB_DIR}/"queue-media"
+  QUEUE_BUILDER="${LIB_DIR}/queue-media"
 fi
 
-exec env SEARCH_DIR=${SEARCH_DIR} PLAYER=${PLAYER} ${LIB}
+QUEUE_MSG=$(env SEARCH_DIR=${SEARCH_DIR} ${QUEUE_BUILDER})
+
+if [[ $? -ne 0 ]]
+then
+  echo ${QUEUE_MSG}
+  exit 1
+fi
+
+echo "Enqueueing playlist ${QUEUE_MSG}"
+
+${PLAYER} ${QUEUE_MSG} &
 
