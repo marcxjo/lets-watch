@@ -105,7 +105,10 @@ then
   exit 1
 fi
 
-echo "Enqueueing playlist ${QUEUE_MSG}"
+echo "Enqueued media:"
+echo "--------------"
+echo "${QUEUE_MSG}"
+echo "--------------"
 
 ${PLAYER} ${QUEUE_MSG} &
 
