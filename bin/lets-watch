@@ -46,14 +46,11 @@ usage() {
 EOF
 }
 
-try_source() {
-  local _file=${1}
-
-  if [[ -f ${_file} ]]
-  then
-    . ${_file}
-  fi
-}
+LIB_DIR=${LETS_WATCH_LIB_DIR:-"${HOME}/.local/lib/lets-watch"}
+MEDIA_DIR=${LETS_WATCH_MEDIA_DIR:-"$(xdg-user-dir VIDEOS)"}
+PLAYLIST_DIR=${LETS_WATCH_PLAYLIST_DIR:-"${MEDIA_DIR}/playlists"}
+TMP_DIR=${LETS_WATCH_TMP_DIR:-"${XDG_RUNTIME_DIR}/lets-watch"}
+PLAYER=${LETS_WATCH_MEDIA_PLAYER:-mpv}
 
 while getopts :d:lp:h o; do
   case "$o" in
