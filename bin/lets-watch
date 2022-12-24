@@ -2,7 +2,7 @@
 
 usage() {
   cat <<EOF
-  ${0##*/} - a simple script to enqueue
+  ${0##*/} - a simple script to enqueue media
 
   Usage:
     ${0##*/} [ [-d SCRIPT_DIR] [-l] [-p PLAYER] | [-h] ]
@@ -24,9 +24,12 @@ usage() {
 
   -p PLAYER
     Enables specifying the media player command. This command must:
-    * be able to accept a space-separated list of files (potentially consisting
-      of both media files and playlists) as its final argument string
-    * must not require any additional a
+    * be able to accept a newline-separated list of files (potentially
+      consisting of both media files and playlists) as its final
+      argument string
+    * must not require any additional command-line options to run - if
+      your command requires options, use a wrapper script which passes
+      in the required options and arguments
 
     PLAYER can be a multi-word string (in order to support e.g. setting
     environment variables and command line options inline), but it must adhere
