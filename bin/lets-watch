@@ -5,13 +5,9 @@ usage() {
   ${0##*/} - a simple script to enqueue
 
   Usage:
-    ${0##*/} [-c CONFIG_FILE] [-d SCRIPT_DIR] [-l] [-p PLAYER] [-h]
+    ${0##*/} [ [-d SCRIPT_DIR] [-l] [-p PLAYER] | [-h] ]
 
   Options:
-
-  -c CONFIG_FILE
-    Enables specifying an alternate config file.
-    Defaults to \${HOME}/.config/lets-watch/default.
 
   -d SCRIPT_DIR
     Enables specifying an alternate directory to be searched during the
@@ -59,11 +55,8 @@ try_source() {
   fi
 }
 
-while getopts :c:d:lp:h o; do
+while getopts :d:lp:h o; do
   case "$o" in
-    c)
-      CONFIG_FILE=${OPTARG}
-      ;;
     d)
       SCRIPT_DIR=${OPTARG}
       ;;
@@ -80,11 +73,7 @@ while getopts :c:d:lp:h o; do
   esac
 done
 
-shift ${OPTIND}
-
-CONFIG_FILE=${CONFIG_FILE:-${HOME}/.config/lets-watch/default}
-
-try_source $CONFIG_FILE
+shift $(( ${OPTIND} - 1 ))
 
 if [[ "${PLAYLIST_MODE+x}" == "x" ]]
 then
