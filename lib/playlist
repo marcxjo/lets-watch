@@ -1,0 +1,36 @@
+#!/bin/bash
+
+lw_select_media() {
+  local -rn media_selection="$1"
+  shift 1
+  local -ra media_dirs=("$@")
+
+  if [[ ${#media_dirs[@]} -eq 0 ]]; then
+    echo "No media directory specified!" >&2
+    return 1
+  fi
+
+  playlist_file=$(find "${media_dirs[@]}" -type f | fzf --delimiter '/' --with-nth=-1 --preview="cat {} | sed 's|^.*\/||'")
+
+  if [[ -z ${playlist_file} ]]; then
+    echo "No playlist selected!" >&2
+    return 1
+  fi
+
+  selected_entry=$(sed '/^\(\|#.*\)$/d' "$playlist_file" | nl -n 'ln' | fzf -d '/' --with-nth=-1)
+
+  selected_line_num="${selected_entry%% *}"
+
+  if [[ -z "${selected_line_num:-}" ]]; then
+    echo "No playlist entry selected for playback start!" >&2
+    return 1
+  fi
+
+  if [[ ${selected_line_num} -eq 1 ]]; then
+    media_selection=("${playlist_file}")
+  else
+    IFS=$'\n' media_selection=("$(tail -n+"${selected_line_num}" "$playlist_file" | sed '/^\s*#/d;/^\s*$/d')")
+  fi
+
+  echo "${media_selection[@]}"
+}

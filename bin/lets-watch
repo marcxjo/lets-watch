@@ -1,11 +1,37 @@
 #!/bin/bash
 
+# Ignore warnings for sourcing files from variable input
+# We support user-defined config paths
+# shellcheck disable=SC1090
+
+# Variables ####################################################################
+
+declare -r SCRIPT_NAME="${0##*/}"
+
+declare -r LIB_DIR="${HOME}/.local/lib/lets-watch"
+declare -r TMP_DIR="${XDG_RUNTIME_DIR}/lets-watch"
+
+declare -r CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
+declare -r CONFIG_DIR="${CONFIG_HOME%/}/lets-watch"
+declare -r DEFAULT_CONFIG_FILE="${CONFIG_DIR}/config"
+
+declare -r DEFAULT_MEDIA_PLAYER='mpv'
+# Passed by nameref
+# shellcheck disable=SC2034
+declare -A DEFAULT_MEDIA_DIRS=(
+  ['local-media']="$(xdg-user-dir VIDEOS)"
+  ['playlist']="${CONFIG_DIR}/playlists"
+)
+
+# TFM ##########################################################################
+
 usage() {
   cat <<EOF
-  ${0##*/} - a simple script to enqueue media
+  $SCRIPT_NAME - a simple script to enqueue media
 
   Usage:
-    ${0##*/} [ [-d SCRIPT_DIR] [-l] [-p PLAYER] | [-h] ]
+    $SCRIPT_NAME [-c CONFIG_FILE] PLUGIN
+    $SCRIPT_NAME [-h]
 
   Options:
 
@@ -40,64 +66,129 @@ usage() {
   -h
     Displays this help message.
 
-  Environment Variables:
+  Config Variables:
 
-  LETS_WATCH_MEDIA_PLAYER
-    Enables setting the default media player via environment variable rather
-    than by command-line option.
+  MEDIA_PLAYER
+    Sets the media player activated by the script. This player MUST be able to
+    accept a path to a single .M3U-formatted playlist as input.
+
+  MEDIA_DIRS
+    An associative array containing the directory paths to be searched while
+    running the script.
+
+    Keys are plugin basenames; values are colon-separated lists of absolute
+    directory paths. Default values for built-in plugins are set as follows:
+
+    local-media: \$XDG_VIDEOS_DIR
+    playlist: \$CONFIG_HOME/lets-watch/playlists, where \$CONFIG_HOME is equal
+    to \$XDG_CONFIG_HOME if set, otherwise \$HOME/.config
 
 EOF
 }
 
-LIB_DIR=${LETS_WATCH_LIB_DIR:-"${HOME}/.local/lib/lets-watch"}
-MEDIA_DIR=${LETS_WATCH_MEDIA_DIR:-"$(xdg-user-dir VIDEOS)"}
-PLAYLIST_DIR=${LETS_WATCH_PLAYLIST_DIR:-"${MEDIA_DIR}/playlists"}
-TMP_DIR=${LETS_WATCH_TMP_DIR:-"${XDG_RUNTIME_DIR}/lets-watch"}
-PLAYER=${LETS_WATCH_MEDIA_PLAYER:-mpv}
+# Functions ####################################################################
 
-while getopts :d:lp:h o; do
+lw_source_plugin() {
+  local -r plugin_name="$1"
+
+  [[ -z "$plugin_name" ]] &&
+    return 1
+
+  local -r plugin="${LIB_DIR}/${plugin_name}"
+
+  [[ -r "$plugin" ]] &&
+    . "$plugin"
+}
+
+lw_gen_random_tag() {
+  # Append a random tag to playlist names so that we don't overwrite a previously enqueued list
+  LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 6
+}
+
+copy_map() {
+  local -rn map_1="$1"
+  local -rn map_2="$2"
+
+  for key in "${!map_1[@]}"; do
+    # We're populating an associative array passed by nameref
+    # We don't want to use it anywhere else within this scope
+    # shellcheck disable=SC2034
+    map_2["$key"]=${map_1["$key"]}
+  done
+}
+
+################################################################################
+
+while getopts :c:h o; do
   case "$o" in
-    d)
-      SCRIPT_DIR=${OPTARG}
-      ;;
-    l)
-      PLAYLIST_MODE="1"
-      ;;
-    p)
-      PLAYER=${OPTARG}
-      ;;
-    h)
-      usage
-      exit 0
-      ;;
+  c)
+    CONFIG_FILE="$OPTARG"
+    ;;
+  h)
+    usage
+    exit 0
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
   esac
 done
 
-shift $(( ${OPTIND} - 1 ))
+shift $((OPTIND - 1))
 
-if [[ "${PLAYLIST_MODE+x}" == "x" ]]
-then
-  SEARCH_DIR=${SCRIPT_DIR:-${PLAYLIST_DIR}}
-  QUEUE_PLUGIN="${LIB_DIR}/queue-pl"
-else
-  SEARCH_DIR=${SCRIPT_DIR:-${MEDIA_DIR}}
-  QUEUE_PLUGIN="${LIB_DIR}/queue-media"
+CONFIG_FILE="${CONFIG_FILE:-${DEFAULT_CONFIG_FILE}}"
+. "$CONFIG_FILE"
+
+if [[ "${#MEDIA_DIRS[@]}" -eq 0 ]]; then
+  declare -A MEDIA_DIRS
+  copy_map 'DEFAULT_MEDIA_DIRS' 'MEDIA_DIRS'
 fi
 
-# If successful, the name of the compiled playlist
-# Otherwise an error message
-QUEUE_MSG=$(env SEARCH_DIR=${SEARCH_DIR} TMP_DIR=${TMP_DIR} ${QUEUE_PLUGIN})
+MEDIA_PLAYER="${MEDIA_PLAYER:-${DEFAULT_MEDIA_PLAYER}}"
 
-if [[ $? -ne 0 ]]
-then
-  echo ${QUEUE_MSG}
+PLUGIN="$1"
+
+if [[ -z "$PLUGIN" ]]; then
+  echo "No plugin specified!"
+  usage
   exit 1
 fi
 
+IFS=':' read -r -a LW_MEDIA_DIRS <<<"${MEDIA_DIRS["$PLUGIN"]}"
+
+if [[ ${#LW_MEDIA_DIRS[@]} -eq 0 ]]; then
+  echo "No media directory specified!"
+  usage
+  exit 1
+fi
+
+lw_source_plugin "$PLUGIN"
+
+if ! declare -f lw_select_media >/dev/null; then
+  echo "Plugin does not implement function lw_select_media!"
+  exit 1
+fi
+
+declare -a MEDIA_SELECTION
+if ! lw_select_media 'MEDIA_SELECTION' "${LW_MEDIA_DIRS[@]}"; then
+  exit 1
+fi
+
+if [[ ${#MEDIA_SELECTION[@]} -eq 0 ]]; then
+  exit 1
+fi
+
+mkdir -p "$TMP_DIR"
+
+declare TMP_PLAYLIST
+TMP_PLAYLIST="${TMP_DIR}/playlist-$(lw_gen_random_tag).m3u"
+
+echo "${MEDIA_SELECTION[@]}" >"$TMP_PLAYLIST"
+
 echo "Enqueued media:"
 echo "--------------"
-echo "${QUEUE_MSG}"
+echo "$TMP_PLAYLIST"
 echo "--------------"
 
-${PLAYER} ${QUEUE_MSG} &
-
+${MEDIA_PLAYER} "$TMP_PLAYLIST" &

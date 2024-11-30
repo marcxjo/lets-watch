@@ -1,0 +1,23 @@
+#!/bin/bash
+
+lw_select_media() {
+  local -rn media_selection="$1"
+  shift 1
+  local -ra media_dirs=("$@")
+
+  if [[ ${#media_dirs[@]} -eq 0 ]]; then
+    echo "No media directory specified!" >&2
+    return 1
+  fi
+
+  raw_selection="$(find "${media_dirs[@]}" -type f | fzf -m -d '/' --with-nth=-1)"
+
+  if [[ -z ${raw_selection} ]]; then
+    echo "No media selected!" >&2
+    return 1
+  fi
+
+  IFS=$'\n' media_selection=("${raw_selection}")
+  echo "${media_selection[@]}"
+  return 0
+}
