@@ -1,0 +1,25 @@
+#!/bin/bash
+
+_lets_watch() {
+  COMPREPLY=()
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  local prefix="${HOME}/.local/lib/lets-watch"
+
+  case $COMP_CWORD in
+  0)
+    :
+    ;;
+  1)
+    local -a lw_plugins=($(compgen -d "{prefix%/}/${cur}"))
+    for plugin in "${lw_plugins[@]}"; do
+      COMPREPLY+=("${plugin#${prefix%/}/}")
+    done
+    unset lw_plugins
+    ;;
+  *)
+    :
+    ;;
+  esac
+}
+
+complete -o filenames -F _lets_watch lets-watch
